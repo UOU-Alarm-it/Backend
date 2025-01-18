@@ -143,4 +143,22 @@ public class NoticeServiceImpl implements NoticeService {
 
         return wouldSaveIds;
     }
+
+    // 공지 조회
+    // 페이징 처리 해야할듯
+    @Override
+    public List<Notice> findByCategory(Integer categoryInt) {
+
+        Category category;
+
+        if (categoryInt == 0) {
+            category = Category.NOTICE;
+        } else if (categoryInt == 1) {
+            category = Category.COMMON;
+        } else {
+            return noticeRepository.findAllByOrderByIdDesc();
+        }
+
+        return noticeRepository.findAllByCategoryOrderByIdDesc(category);
+    }
 }

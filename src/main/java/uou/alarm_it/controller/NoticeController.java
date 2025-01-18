@@ -24,8 +24,20 @@ public class NoticeController {
     @GetMapping("/crawling")
     public ApiResponse<List<Notice>> webCrawling(
             @RequestParam(name = "maxPage", defaultValue = "1") Integer maxPage
-    )
-    {
+    ) {
         return ApiResponse.onSuccess(noticeService.webCrawling(maxPage));
+    }
+
+    /**
+     * 25.01.18
+     * 작성자 : 류기현
+     * 카테고리별 공지 조회
+     */
+    @GetMapping("/notice")
+    public ApiResponse<List<Notice>> getNoticesByCategory(
+            @RequestParam(name = "category", defaultValue = "2") Integer category
+    ) {
+        return ApiResponse.onSuccess(noticeService.findByCategory(category));
+
     }
 }
