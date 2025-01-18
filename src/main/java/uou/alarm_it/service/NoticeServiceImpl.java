@@ -1,33 +1,49 @@
 package uou.alarm_it.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uou.alarm_it.domain.Enum.Category;
 import uou.alarm_it.domain.Notice;
+import uou.alarm_it.repository.NoticeRepository;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
+@Slf4j
 public class NoticeServiceImpl implements NoticeService {
 
+    private final NoticeRepository noticeRepository;
+
+    // 최근 크롤링한 id 저장
+    private static final Set<Long> recentIds = new HashSet<>();
+
+    // 웹 크롤링
     @Override
     public List<Notice> webCrawling(Integer page) {
 
-        // 웹 크롤링
         List<Notice> noticeList = new ArrayList<>();
 
         for (int i = 1; page >= i; i++) {
             String pageStr = Integer.toString(i);
             String IT_URL = "https://ncms.ulsan.ac.kr/cicweb/1024?pageIndex=" + pageStr + "&bbsId=1637&searchCondition=title&searchKeyword=";
 
-            Elements contents = null;
+            Elements contents;
             try {
                 contents = Jsoup.connect(IT_URL).get().select("table.a_brdList tbody");
             } catch (IOException e) {
@@ -84,5 +100,47 @@ public class NoticeServiceImpl implements NoticeService {
         }
 
         return noticeList;
+    }
+
+    // 공지 크롤링, 저장 (자동화)
+    @Override
+    @Scheduled(cron = "0 * * * * *")
+    public void scheduledUpdate() {
+
+        List<Notice> notices = webCrawling(1);
+        Set<Long> crawlIds = notices.stream().map(Notice::getId).collect(Collectors.toSet());
+
+        Set<Long> willSaveIds = diffWithSaved(crawlIds, recentIds);
+        List<Notice> noticesToSave = new ArrayList<>();
+
+        for (Long id : willSaveIds) {
+            notices.stream()
+                    .filter(notice -> notice.getId().equals(id))
+                    .findFirst()
+                    .ifPresent(noticesToSave::add);
+        }
+
+        noticeRepository.saveAll(noticesToSave);
+        log.info("resent post update fin");
+        log.info(recentIds.toString());
+    }
+
+    // Id 의 차이를 구함
+    public Set<Long> diffWithSaved(Set<Long> crawlIds, Set<Long> presentIds) {
+
+        Set<Long> wouldSaveIds = new HashSet<>();
+
+        // id를 가지고 있지 않다면, id 를 wouldSaveIds 에 추가
+        for (Long id : crawlIds) {
+            if (!presentIds.contains(id)) {
+                wouldSaveIds.add(id);
+            }
+        }
+
+        // resentIds hashSet 최신화
+        recentIds.clear();
+        recentIds.addAll(crawlIds);
+
+        return wouldSaveIds;
     }
 }
