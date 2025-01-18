@@ -1,4 +1,4 @@
-package uou.alarmit;
+package uou.alarm_it;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
