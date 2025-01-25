@@ -1,6 +1,7 @@
 package uou.alarm_it.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,10 +35,11 @@ public class NoticeController {
      * 카테고리별 공지 조회
      */
     @GetMapping("/notice")
-    public ApiResponse<List<Notice>> getNoticesByCategory(
-            @RequestParam(name = "category", defaultValue = "2") Integer category
+    public ApiResponse<Page<Notice>> getNoticesByCategory(
+            @RequestParam(name = "category", defaultValue = "2") Integer category,
+            @RequestParam(name = "page", defaultValue = "0") Integer page
     ) {
-        return ApiResponse.onSuccess(noticeService.findByCategory(category));
+        return ApiResponse.onSuccess(noticeService.getNoticeList(category, page));
 
     }
 }
