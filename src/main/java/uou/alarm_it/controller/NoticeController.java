@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uou.alarm_it.apiPayload.ApiResponse;
+import uou.alarm_it.apiPayload.code.status.SuccessStatus;
 import uou.alarm_it.domain.Notice;
 import uou.alarm_it.service.NoticeService;
 
@@ -41,5 +42,18 @@ public class NoticeController {
     ) {
         return ApiResponse.onSuccess(noticeService.getNoticeList(category, page));
 
+    }
+
+    /**
+     * 25.01.25
+     * 작성자 : 류기현
+     * 전체 데이터 크롤링 후 저장
+     */
+    @GetMapping("/refresh")
+    public ApiResponse<SuccessStatus> wholeCrawlingSave(
+            @RequestParam(name = "maxPage", defaultValue = "1") Integer maxPage
+    ) {
+        noticeService.refresh(maxPage);
+        return ApiResponse.onSuccess(SuccessStatus._OK);
     }
 }

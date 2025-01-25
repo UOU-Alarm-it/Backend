@@ -34,6 +34,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // 최근 크롤링한 id 저장
     private static final Set<Long> recentIds = new HashSet<>();
+    private static final Integer lastPage = 50;
 
     // 웹 크롤링
     @Override
@@ -125,6 +126,23 @@ public class NoticeServiceImpl implements NoticeService {
         noticeRepository.saveAll(noticesToSave);
         log.info("resent post update fin");
         log.info(recentIds.toString());
+    }
+
+    // 공지 클롤링, 저장 (전체 페이지)
+    @Override
+    @Transactional
+    public void refresh(Integer page) {
+        List<Notice> notices = webCrawling(page);
+
+        noticeRepository.deleteAll();
+        noticeRepository.saveAll(notices);
+    }
+
+    // 매달 DB 초기화
+    @Override
+    @Scheduled(cron = "0 0 0 1 * *")
+    public void scheduledRefresh() {
+        refresh(lastPage);
     }
 
     // id 의 차이를 구함
