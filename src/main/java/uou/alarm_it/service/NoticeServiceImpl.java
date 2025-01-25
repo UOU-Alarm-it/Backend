@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -125,7 +127,7 @@ public class NoticeServiceImpl implements NoticeService {
         log.info(recentIds.toString());
     }
 
-    // Id 의 차이를 구함
+    // id 의 차이를 구함
     public Set<Long> diffWithSaved(Set<Long> crawlIds, Set<Long> presentIds) {
 
         Set<Long> wouldSaveIds = new HashSet<>();
@@ -145,9 +147,8 @@ public class NoticeServiceImpl implements NoticeService {
     }
 
     // 공지 조회
-    // 페이징 처리 해야할듯
     @Override
-    public List<Notice> findByCategory(Integer categoryInt) {
+    public Page<Notice> getNoticeList(Integer categoryInt, Integer page) {
 
         Category category;
 
@@ -156,9 +157,9 @@ public class NoticeServiceImpl implements NoticeService {
         } else if (categoryInt == 1) {
             category = Category.COMMON;
         } else {
-            return noticeRepository.findAllByOrderByIdDesc();
+            return noticeRepository.findAllByOrderByIdDesc(PageRequest.of(page, 10));
         }
 
-        return noticeRepository.findAllByCategoryOrderByIdDesc(category);
+        return noticeRepository.findAllByCategoryOrderByIdDesc(category, PageRequest.of(page, 10));
     }
 }
