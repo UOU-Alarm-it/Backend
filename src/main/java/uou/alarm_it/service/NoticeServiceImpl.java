@@ -7,6 +7,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -175,9 +176,18 @@ public class NoticeServiceImpl implements NoticeService {
         } else if (categoryInt == 1) {
             category = Category.COMMON;
         } else {
-            return noticeRepository.findAllByOrderByIdDesc(PageRequest.of(page, 10));
+            return noticeRepository.findAllByOrderByIdDesc(PageRequest.of(page, 10, Sort.by("id").descending()));
         }
 
-        return noticeRepository.findAllByCategoryOrderByIdDesc(category, PageRequest.of(page, 10));
+        return noticeRepository.findAllByCategoryOrderByIdDesc(category, PageRequest.of(page, 10, Sort.by("id").descending()));
+    }
+
+    // 검색 기능
+    @Override
+    public Page<Notice> getNoticeByKeyWord(String keyWord, Integer page) {
+
+        PageRequest pageRequest = PageRequest.of(page, 10, Sort.by("id").descending());
+
+        return noticeRepository.findNoticeByTitleContainingIgnoreCase(keyWord, pageRequest);
     }
 }
