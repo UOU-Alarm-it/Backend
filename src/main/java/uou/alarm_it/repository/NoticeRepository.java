@@ -12,9 +12,7 @@ import uou.alarm_it.domain.Notice;
 @Repository
 public interface NoticeRepository extends JpaRepository<Notice, Long> {
 
-    Page<Notice> findAllByOrderByIdDesc(Pageable pageRequest);
-
-    Page<Notice> findAllByCategoryOrderByIdDesc(Category category, Pageable pageRequest);
+    Page<Notice> findAllByCategory(Category category, Pageable pageRequest);
 
     Page<Notice> findNoticeByTitleContainingIgnoreCase(String title, Pageable pageRequest);
 }

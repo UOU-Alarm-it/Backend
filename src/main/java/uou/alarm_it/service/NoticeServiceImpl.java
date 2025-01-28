@@ -170,16 +170,19 @@ public class NoticeServiceImpl implements NoticeService {
     public Page<Notice> getNoticeList(Integer categoryInt, Integer page) {
 
         Category category;
+        PageRequest pageRequest = PageRequest.of(page, 10,
+                Sort.by(Sort.Order.asc("category"), Sort.Order.desc("id"))
+        );
 
         if (categoryInt == 0) {
             category = Category.NOTICE;
         } else if (categoryInt == 1) {
             category = Category.COMMON;
         } else {
-            return noticeRepository.findAllByOrderByIdDesc(PageRequest.of(page, 10, Sort.by("id").descending()));
+            return noticeRepository.findAll(pageRequest);
         }
 
-        return noticeRepository.findAllByCategoryOrderByIdDesc(category, PageRequest.of(page, 10, Sort.by("id").descending()));
+        return noticeRepository.findAllByCategory(category, pageRequest);
     }
 
     // 검색 기능
