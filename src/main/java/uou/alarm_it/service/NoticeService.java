@@ -16,4 +16,6 @@ public interface NoticeService {
     void scheduledRefresh();
 
     Page<Notice> getNoticeList(Integer categoryInt, Integer page);
+
+    Page<Notice> getNoticeByKeyWord(String keyWord, Integer page);
 }

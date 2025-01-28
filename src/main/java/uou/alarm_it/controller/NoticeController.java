@@ -56,4 +56,18 @@ public class NoticeController {
         noticeService.refresh(maxPage);
         return ApiResponse.onSuccess(SuccessStatus._OK);
     }
+
+    /**
+     * 25.01.28
+     * 작성자 : 류기현
+     * 검색 API
+     */
+    @GetMapping("/search")
+    public ApiResponse<Page<Notice>> search(
+            @RequestParam(name = "keyWord", defaultValue = "") String keyWord,
+            @RequestParam(name = "page", defaultValue = "0") Integer page
+    ) {
+
+        return ApiResponse.onSuccess(noticeService.getNoticeByKeyWord(keyWord, page));
+    }
 }
