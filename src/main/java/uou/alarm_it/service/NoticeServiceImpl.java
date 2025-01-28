@@ -186,7 +186,9 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     public Page<Notice> getNoticeByKeyWord(String keyWord, Integer page) {
 
-        PageRequest pageRequest = PageRequest.of(page, 10, Sort.by("id").descending());
+        PageRequest pageRequest = PageRequest.of(page, 10,
+                Sort.by(Sort.Order.asc("category"), Sort.Order.desc("id"))
+        );
 
         return noticeRepository.findNoticeByTitleContainingIgnoreCase(keyWord, pageRequest);
     }
