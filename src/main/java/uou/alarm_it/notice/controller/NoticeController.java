@@ -1,14 +1,15 @@
-package uou.alarm_it.controller;
+package uou.alarm_it.notice.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import uou.alarm_it.apiPayload.ApiResponse;
 import uou.alarm_it.apiPayload.code.status.SuccessStatus;
-import uou.alarm_it.domain.Notice;
-import uou.alarm_it.service.NoticeService;
+import uou.alarm_it.notice.domain.Notice;
+import uou.alarm_it.notice.service.NoticeService;
 
 import java.util.List;
 
@@ -17,6 +18,8 @@ import java.util.List;
 public class NoticeController {
 
     private final NoticeService noticeService;
+
+    private final SseEmitter emitter = new SseEmitter();
 
     /**
      * 25.01.18

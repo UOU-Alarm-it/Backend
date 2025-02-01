@@ -1,7 +1,7 @@
-package uou.alarm_it.service;
+package uou.alarm_it.notice.service;
 
 import org.springframework.data.domain.Page;
-import uou.alarm_it.domain.Notice;
+import uou.alarm_it.notice.domain.Notice;
 
 import java.util.List;
 

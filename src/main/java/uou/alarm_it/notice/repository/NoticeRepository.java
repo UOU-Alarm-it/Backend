@@ -1,11 +1,11 @@
-package uou.alarm_it.repository;
+package uou.alarm_it.notice.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import uou.alarm_it.domain.Enum.Category;
-import uou.alarm_it.domain.Notice;
+import uou.alarm_it.notice.domain.Enum.Category;
+import uou.alarm_it.notice.domain.Notice;
 
 
 
