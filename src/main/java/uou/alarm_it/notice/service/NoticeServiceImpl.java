@@ -45,7 +45,8 @@ public class NoticeServiceImpl implements NoticeService {
     private final NotificationService notificationService;
 
     private static final String BASE_URL = "https://ncms.ulsan.ac.kr/cicweb/1024";
-    private static final boolean USE_LOCAL_HTML = false; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
+    private static final boolean USE_LOCAL_HTML = true; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
+    private static boolean NOTIFICATION = false;
 
     private Integer j = 0;
 
@@ -128,10 +129,11 @@ public class NoticeServiceImpl implements NoticeService {
                 }
 
                 try {
-                    link = content.select("td.bdlTitle a").attr("abs:href");
+                    link = content.select("td.bdlTitle a").attr("href");
                     if (link.isEmpty()) {
                         System.err.println("게시글 '" + title + "'의 링크를 찾을 수 없습니다.");
                     }
+                    link = BASE_URL + link;
                 } catch (Exception e) {
                     System.err.println("링크 추출 중 오류 발생: " + e.getMessage());
                 }
@@ -173,12 +175,27 @@ public class NoticeServiceImpl implements NoticeService {
         if (!noticesToSave.isEmpty()) {
             noticeRepository.saveAll(noticesToSave);
 
-            for (Notice notice : noticesToSave) {
-                notificationService.sendNotification(
-                        NotificationDto.builder()
-                                .title(notice.getTitle())
-                                .build());
+            if (NOTIFICATION) {
+                for (Notice notice : noticesToSave) {
+                    notificationService.sendNotification(
+                            NotificationDto.builder()
+                                    .title(notice.getTitle())
+                                    .link(notice.getLink())
+                                    .build());
+                }
+            } else {
+                for (Notice notice : noticesToSave) {
+                    notificationService.sendNotification(
+                            NotificationDto.builder()
+                                    .title(notice.getTitle())
+                                    .link(notice.getLink())
+                                    .build());
+                }
+
+                NOTIFICATION = true;
             }
+
+
             log.info(recentIds.toString());
         }
     }
