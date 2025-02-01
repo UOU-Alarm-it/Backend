@@ -1,4 +1,4 @@
-package uou.alarm_it.service;
+package uou.alarm_it.notice.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,9 +11,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uou.alarm_it.domain.Enum.Category;
-import uou.alarm_it.domain.Notice;
-import uou.alarm_it.repository.NoticeRepository;
+import uou.alarm_it.notice.domain.Enum.Category;
+import uou.alarm_it.notice.domain.Notice;
+import uou.alarm_it.notice.repository.NoticeRepository;
 
 import java.io.IOException;
 import java.time.LocalDate;

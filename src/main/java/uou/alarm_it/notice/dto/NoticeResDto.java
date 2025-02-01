@@ -1,8 +1,8 @@
-package uou.alarm_it.dto;
+package uou.alarm_it.notice.dto;
 
 import lombok.Getter;
-import uou.alarm_it.domain.Enum.Category;
-import uou.alarm_it.domain.Notice;
+import uou.alarm_it.notice.domain.Enum.Category;
+import uou.alarm_it.notice.domain.Notice;
 
 import java.time.LocalDate;
 

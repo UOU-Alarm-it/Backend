@@ -1,10 +1,10 @@
-package uou.alarm_it.domain;
+package uou.alarm_it.notice.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.*;
-import uou.alarm_it.domain.Enum.Category;
+import uou.alarm_it.notice.domain.Enum.Category;
 
 import java.time.LocalDate;
 
