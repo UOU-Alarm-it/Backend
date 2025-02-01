@@ -3,8 +3,10 @@ package uou.alarm_it.notice.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,8 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import uou.alarm_it.notice.domain.Enum.Category;
 import uou.alarm_it.notice.domain.Notice;
 import uou.alarm_it.notice.repository.NoticeRepository;
+import uou.alarm_it.notification.dto.NotificationDto;
+import uou.alarm_it.notification.service.NotificationService;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -23,6 +28,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,9 +40,14 @@ public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
 
-    // 최근 크롤링한 id 저장
-    private static final Set<Long> recentIds = new HashSet<>();
+    private static final Set<Long> recentIds = new HashSet<>(); // 최근 크롤링한 ID
     private static final Integer lastPage = 50;
+    private final NotificationService notificationService;
+
+    private static final String BASE_URL = "https://ncms.ulsan.ac.kr/cicweb/1024";
+    private static final boolean USE_LOCAL_HTML = false; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
+
+    private Integer j = 0;
 
     // 웹 크롤링
     @Override
@@ -43,15 +55,34 @@ public class NoticeServiceImpl implements NoticeService {
 
         List<Notice> noticeList = new ArrayList<>();
 
+
         for (int i = 1; page >= i; i++) {
             String pageStr = Integer.toString(i);
-            String IT_URL = "https://ncms.ulsan.ac.kr/cicweb/1024?pageIndex=" + pageStr + "&bbsId=1637&searchCondition=title&searchKeyword=";
+            String IT_URL = BASE_URL + "?pageIndex=" + pageStr + "&bbsId=1637&searchCondition=title&searchKeyword=";
 
             Elements contents;
-            try {
-                contents = Jsoup.connect(IT_URL).get().select("table.a_brdList tbody");
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+
+            if (USE_LOCAL_HTML) {
+                // 로컬 HTML 파일을 이용한 테스트 모드
+                ClassPathResource resource = new ClassPathResource("html/test" + j + ".html");
+                j++;
+
+                if (!resource.exists()) {
+                    throw new RuntimeException("HTML 파일을 찾을 수 없습니다.");
+                }
+
+                try {
+                    Document doc = Jsoup.parse(resource.getFile(), StandardCharsets.UTF_8.name());
+                    contents = doc.select("table.a_brdList tbody");
+                } catch (IOException e) {
+                    throw new RuntimeException("HTML 파일을 파싱하는 중 오류 발생: " + e.getMessage(), e);
+                }
+            } else {
+                try {
+                    contents = Jsoup.connect(IT_URL).get().select("table.a_brdList tbody");
+                } catch (IOException e) {
+                    throw new RuntimeException("페이지 로드 실패: " + IT_URL, e);
+                }
             }
 
             for (Element content : contents.select("tr")) {
@@ -66,15 +97,26 @@ public class NoticeServiceImpl implements NoticeService {
                 // 공지인 경우, 아닌경우 title, id, category 추출
                 if (content.hasClass("noti")) {
                     title = content.select("tr td.bdlTitle b a").text();                                // title
-                    idString = content.select("tr td.bdlTitle b a").attr("abs:href");        // id
+                    idString = content.select("tr td.bdlTitle b a").attr("href");        // id
                     category = Category.NOTICE;                                                                  // category
                 } else {
                     title = content.select("td.bdlTitle a").text();
-                    idString = content.select("tr td.bdlTitle a").attr("abs:href");
+                    idString = content.select("tr td.bdlTitle a").attr("href");
                     category = Category.COMMON;
                 }
 
-                id = Long.parseLong(idString.replaceAll(".*no=(\\d+).*", "$1"));                //id
+                if (idString == null || idString.isEmpty()) {
+                    throw new IllegalArgumentException("idString이 null이거나 비어 있습니다." + title);
+                }
+
+                Pattern pattern = Pattern.compile("no=(\\d+)");
+                Matcher matcher = pattern.matcher(idString);
+
+                if (matcher.find()) {
+                    id = Long.parseLong(matcher.group(1));
+                } else {
+                    throw new NumberFormatException("ID를 찾을 수 없습니다. URL: " + idString);
+                }
 
                 // date
                 try {
@@ -87,9 +129,11 @@ public class NoticeServiceImpl implements NoticeService {
 
                 try {
                     link = content.select("td.bdlTitle a").attr("abs:href");
-                } catch (NullPointerException e) {
-                    System.err.println("게시글" + title + "의 링크를 가져오지 못했습니다. " + e.getMessage());
-
+                    if (link.isEmpty()) {
+                        System.err.println("게시글 '" + title + "'의 링크를 찾을 수 없습니다.");
+                    }
+                } catch (Exception e) {
+                    System.err.println("링크 추출 중 오류 발생: " + e.getMessage());
                 }
 
                 Notice notice = Notice.builder()
@@ -124,9 +168,19 @@ public class NoticeServiceImpl implements NoticeService {
                     .ifPresent(noticesToSave::add);
         }
 
-        noticeRepository.saveAll(noticesToSave);
         log.info("resent post update fin");
-        log.info(recentIds.toString());
+
+        if (!noticesToSave.isEmpty()) {
+            noticeRepository.saveAll(noticesToSave);
+
+            for (Notice notice : noticesToSave) {
+                notificationService.sendNotification(
+                        NotificationDto.builder()
+                                .title(notice.getTitle())
+                                .build());
+            }
+            log.info(recentIds.toString());
+        }
     }
 
     // 공지 클롤링, 저장 (전체 페이지)

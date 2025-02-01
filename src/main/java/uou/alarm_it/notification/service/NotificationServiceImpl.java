@@ -2,6 +2,7 @@ package uou.alarm_it.notification.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import uou.alarm_it.notification.dto.NotificationDto;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,7 +30,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     // 알림 전송
     @Override
-    public void sendNotification(String notificationDto) {
+    public void sendNotification(NotificationDto notificationDto) {
         List<SseEmitter> deadEmitters = new ArrayList<>();
 
         emitters.forEach(emitter -> {

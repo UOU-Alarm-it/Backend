@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import uou.alarm_it.notification.dto.NotificationDto;
 import uou.alarm_it.notification.service.NotificationService;
 
 @RestController
@@ -23,7 +24,7 @@ public class NotificationController {
 
     // 알림 전송 요청
     @PostMapping("/send-notification")
-    public void sendNotification(@RequestBody String notificationDto) {
+    public void sendNotification(@RequestBody NotificationDto notificationDto) {
         notificationService.sendNotification(notificationDto);
     }
 }
