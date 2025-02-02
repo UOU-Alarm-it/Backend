@@ -16,13 +16,20 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
-    // SSE 연결 요청
+    /**
+     * 25.02.01
+     * 작성자 : 류기현
+     * SSE 연결 요청
+     */
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter subscribe() {
         return notificationService.subscribe();
     }
 
-    // 알림 전송 요청
+    /**
+     * 25.02.01
+     * 알림 전송 요청 (백엔드 수행 API)
+     */
     @PostMapping("/send-notification")
     public void sendNotification(@RequestBody NotificationDto notificationDto) {
         notificationService.sendNotification(notificationDto);

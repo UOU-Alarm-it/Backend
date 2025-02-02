@@ -157,6 +157,14 @@ public class NoticeServiceImpl implements NoticeService {
     @Scheduled(cron = "0 * * * * *")
     public void scheduledUpdate() {
 
+        // 알람 테스트 코드 - 시작
+        notificationService.sendNotification(
+                NotificationDto.builder()
+                        .title("임시 알람 제목")
+                        .link("https://ncms.ulsan.ac.kr/cicweb/1024 - 예시 link 입니다.")
+                        .build());
+        // 알람 테스트 코드 - 끝
+
         List<Notice> notices = webCrawling(1);
         Set<Long> crawlIds = notices.stream().map(Notice::getId).collect(Collectors.toSet());
 
@@ -184,17 +192,8 @@ public class NoticeServiceImpl implements NoticeService {
                                     .build());
                 }
             } else {
-                for (Notice notice : noticesToSave) {
-                    notificationService.sendNotification(
-                            NotificationDto.builder()
-                                    .title(notice.getTitle())
-                                    .link(notice.getLink())
-                                    .build());
-                }
-
                 NOTIFICATION = true;
             }
-
 
             log.info(recentIds.toString());
         }
