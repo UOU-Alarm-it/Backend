@@ -161,7 +161,7 @@ public class NoticeServiceImpl implements NoticeService {
         notificationService.sendNotification(
                 NotificationDto.builder()
                         .title("임시 알람 제목")
-                        .link("https://ncms.ulsan.ac.kr/cicweb/1024 - 예시 link 입니다.")
+                        .link("https://ncms.ulsan.ac.kr/cicweb/1024")
                         .build());
         // 알람 테스트 코드 - 끝
 
