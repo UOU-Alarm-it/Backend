@@ -39,10 +39,10 @@ import java.util.stream.Collectors;
 public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
+    private final NotificationService notificationService;
 
     private static final Set<Long> recentIds = new HashSet<>(); // 최근 크롤링한 ID
     private static final Integer lastPage = 50;
-    private final NotificationService notificationService;
 
     private static final String BASE_URL = "https://ncms.ulsan.ac.kr/cicweb/1024";
     private static final boolean USE_LOCAL_HTML = false; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
@@ -106,8 +106,8 @@ public class NoticeServiceImpl implements NoticeService {
                     category = Category.COMMON;
                 }
 
-                if (idString == null || idString.isEmpty()) {
-                    throw new IllegalArgumentException("idString이 null이거나 비어 있습니다." + title);
+                if (idString.isEmpty()) {
+                    throw new IllegalArgumentException("idString 이 null 이거나 비어 있습니다." + title);
                 }
 
                 Pattern pattern = Pattern.compile("no=(\\d+)");

@@ -1,5 +1,6 @@
 package uou.alarm_it.notification.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import uou.alarm_it.notification.dto.NotificationDto;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Slf4j
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
@@ -45,5 +47,6 @@ public class NotificationServiceImpl implements NotificationService {
 
         // 연결이 끊긴 클라이언트 제거
         emitters.removeAll(deadEmitters);
+        log.info("알람을 받은 클라이언트(이용자) 수 : {}", emitters.size());
     }
 }
