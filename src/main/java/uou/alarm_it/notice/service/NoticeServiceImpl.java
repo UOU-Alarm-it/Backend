@@ -42,6 +42,7 @@ public class NoticeServiceImpl implements NoticeService {
     private final NotificationService notificationService;
 
     private static final Set<Long> recentIds = new HashSet<>(); // 최근 크롤링한 ID
+
     private static final Integer lastPage = 50;
 
     private static final String BASE_URL = "https://ncms.ulsan.ac.kr/cicweb/1024";
@@ -155,7 +156,7 @@ public class NoticeServiceImpl implements NoticeService {
     // 공지 크롤링, 저장 (자동화)
     @Override
     @Scheduled(cron = "0 * * * * *")
-    public void scheduledUpdate() {
+    public synchronized void scheduledUpdate() {
 
         // 알람 테스트 코드 - 시작
         notificationService.sendNotification(
@@ -171,6 +172,8 @@ public class NoticeServiceImpl implements NoticeService {
         Set<Long> willSaveIds = diffWithSaved(crawlIds, recentIds);
         List<Notice> noticesToSave = new ArrayList<>();
 
+        log.info("will save Ids : {}", willSaveIds.toString());
+
         for (Long id : willSaveIds) {
             notices.stream()
                     .filter(notice -> notice.getId().equals(id))
@@ -178,9 +181,8 @@ public class NoticeServiceImpl implements NoticeService {
                     .ifPresent(noticesToSave::add);
         }
 
-        log.info("resent post update fin");
-
         if (!noticesToSave.isEmpty()) {
+            log.info("noticeToSave is not empty");
             noticeRepository.saveAll(noticesToSave);
 
             if (NOTIFICATION) {
@@ -197,6 +199,8 @@ public class NoticeServiceImpl implements NoticeService {
 
             log.info(recentIds.toString());
         }
+
+        log.info("resent post update fin : scheduledUpdate");
     }
 
     // 공지 클롤링, 저장 (전체 페이지)
@@ -212,7 +216,7 @@ public class NoticeServiceImpl implements NoticeService {
     // 매달 DB 초기화
     @Override
     @Scheduled(cron = "0 0 0 1 * *")
-    public void scheduledRefresh() {
+    public synchronized void scheduledRefresh() {
         refresh(lastPage);
     }
 
@@ -229,8 +233,11 @@ public class NoticeServiceImpl implements NoticeService {
         }
 
         // resentIds hashSet 최신화
-        recentIds.clear();
-        recentIds.addAll(crawlIds);
+        if (!wouldSaveIds.isEmpty()) {
+            log.info("최신과 차이가 있는 recentId : {}", recentIds);
+            recentIds.clear();
+            recentIds.addAll(crawlIds);
+        }
 
         return wouldSaveIds;
     }
