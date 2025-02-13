@@ -1,12 +1,15 @@
 spring:
   datasource:
-    url: ${AWS_DB_URL}
-    username: ${AWS_DB_USERNAME}
-    password: ${AWS_DB_PASSWORD}
-#    url: jdbc:mysql://localhost:3306/alarm_it
-#    username: root
-#    password: rlgus!
+#    url: ${AWS_DB_URL}
+#    username: ${AWS_DB_USERNAME}
+#    password: ${AWS_DB_PASSWORD}
+    url: jdbc:mysql://localhost:53306/alarm_it
+    username: ryuoo0
+    password: rlgus!
     driver-class-name: com.mysql.cj.jdbc.Driver
+#    hikari:
+#      connection-timeout: 30000       # 30초동안 연결 기다림
+#      initialization-fail-timeout: -1 # 재시도 무한 대기
   sql:
     init:
       mode: never
