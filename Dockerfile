@@ -24,13 +24,21 @@ ENV LANGUAGE=ko_KR:ko
 ENV LC_ALL=ko_KR.UTF-8
 ENV TZ=Asia/Seoul
 
-# MySQL 및 OpenJDK 설치, 로케일 추가
-RUN apt-get update && apt-get install -y \
+COPY .platform/nginx.conf /etc/nginx/nginx.conf
+
+# APT 캐시 정리 및 MySQL, OpenJDK, Nginx 설치, 로케일 추가
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends --fix-missing \
     mysql-server \
     openjdk-17-jdk \
     locales && \
     locale-gen ko_KR.UTF-8 && \
     apt-get clean
+
+# Nginx 설치 시 dpkg 옵션 사용
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends nginx \
+    -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 # MySQL 사용자의 홈 디렉토리 수정
 RUN usermod -d /var/lib/mysql mysql
@@ -55,5 +63,5 @@ COPY --from=build /app/build/libs/*.jar /app/app.jar
 # 포트 개방
 EXPOSE 58080
 
-# MySQL 및 Spring Boot 실행
-CMD ["sh", "-c", "service mysql start && sleep 5 && java -Dfile.encoding=UTF-8 -jar /app/app.jar --server.port=58080"]
+# MySQL, Spring Boot 및 Nginx 실행
+CMD ["sh", "-c", "service mysql start && sleep 5 && java -Dfile.encoding=UTF-8 -jar /app/app.jar --server.port=58080 & service nginx start && wait"]
