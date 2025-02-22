@@ -1,7 +1,6 @@
 package uou.alarm_it.notification.dto;
 
 import lombok.*;
-import uou.alarm_it.notice.domain.Notice;
 
 @Getter
 @Setter
@@ -13,4 +12,6 @@ public class NotificationDto {
     private String title;
 
     private String link;
+
+    private String major;
 }

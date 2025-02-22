@@ -10,10 +10,10 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uou.alarm_it.notice.domain.Enum.Category;
+import uou.alarm_it.notice.domain.Enum.Major;
+import uou.alarm_it.notice.domain.Enum.Type;
 import uou.alarm_it.notice.domain.Notice;
 import uou.alarm_it.notice.repository.NoticeRepository;
 import uou.alarm_it.notification.dto.NotificationDto;
@@ -41,31 +41,40 @@ public class NoticeServiceImpl implements NoticeService {
     private final NoticeRepository noticeRepository;
     private final NotificationService notificationService;
 
-    private static final Set<Long> recentIds = new HashSet<>(); // 최근 크롤링한 ID
+    private static final Set<Long> recentITIds = new HashSet<>(); // 최근 크롤링한 ID
+    private static final Set<Long> recentAIIds = new HashSet<>();
+    private static final Set<Long> recentICTIds = new HashSet<>();
 
-    private static final Integer lastPage = 50;
+    private static final boolean USE_LOCAL_HTML = true; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
+    public static boolean NOTIFICATION = false;
 
-    private static final String BASE_URL = "https://ncms.ulsan.ac.kr/cicweb/1024";
-    private static final boolean USE_LOCAL_HTML = false; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
-    private static boolean NOTIFICATION = false;
-
-    private Integer j = 0;
 
     // 웹 크롤링
     @Override
-    public List<Notice> webCrawling(Integer page) {
+    public List<Notice> webCrawling(Integer page, Major major) {
+
+        String baseURL;
+
+        switch (major) {
+            case AI융합전공 -> baseURL = "https://ncms.ulsan.ac.kr/cicweb/1024";
+            case IT융합전공 -> baseURL = "https://ai.ulsan.ac.kr/ai/1105";
+            case ICT융합학부 -> baseURL = "https://ict.ulsan.ac.kr/ict/5786";
+            default -> throw new IllegalStateException("Unexpected value: " + major);
+        }
 
         List<Notice> noticeList = new ArrayList<>();
 
+        int j = 0;
 
         for (int i = 1; page >= i; i++) {
             String pageStr = Integer.toString(i);
-            String IT_URL = BASE_URL + "?pageIndex=" + pageStr + "&bbsId=1637&searchCondition=title&searchKeyword=";
+            String IT_URL = baseURL + "?pageIndex=" + pageStr + "&bbsId=1637&searchCondition=title&searchKeyword=";
 
             Elements contents;
 
             if (USE_LOCAL_HTML) {
                 // 로컬 HTML 파일을 이용한 테스트 모드
+                log.info("로컬 html 파일 test 모드");
                 ClassPathResource resource = new ClassPathResource("html/test" + j + ".html");
                 j++;
 
@@ -89,22 +98,26 @@ public class NoticeServiceImpl implements NoticeService {
 
             for (Element content : contents.select("tr")) {
 
+                if (content.select("td").text().equals("등록된 게시물이 없습니다.")) {
+                    break;
+                }
+
                 long id;
                 String title;
                 LocalDate date = null;
                 String link = null;
-                Category category;
+                Type type;
                 String idString;
 
                 // 공지인 경우, 아닌경우 title, id, category 추출
                 if (content.hasClass("noti")) {
                     title = content.select("tr td.bdlTitle b a").text();                                // title
                     idString = content.select("tr td.bdlTitle b a").attr("href");        // id
-                    category = Category.NOTICE;                                                                  // category
+                    type = Type.NOTICE;                                                                  // category
                 } else {
                     title = content.select("td.bdlTitle a").text();
                     idString = content.select("tr td.bdlTitle a").attr("href");
-                    category = Category.COMMON;
+                    type = Type.COMMON;
                 }
 
                 if (idString.isEmpty()) {
@@ -134,17 +147,20 @@ public class NoticeServiceImpl implements NoticeService {
                     if (link.isEmpty()) {
                         System.err.println("게시글 '" + title + "'의 링크를 찾을 수 없습니다.");
                     }
-                    link = BASE_URL + link;
+                    link = baseURL + link;
                 } catch (Exception e) {
                     System.err.println("링크 추출 중 오류 발생: " + e.getMessage());
                 }
+
+
 
                 Notice notice = Notice.builder()
                         .id(id)
                         .title(title)
                         .date(date)
                         .link(link)
-                        .category(category)
+                        .type(type)
+                        .major(major)
                         .build();
                 noticeList.add(notice);
             }
@@ -153,23 +169,18 @@ public class NoticeServiceImpl implements NoticeService {
         return noticeList;
     }
 
-    // 공지 크롤링, 저장 (자동화)
     @Override
-    @Scheduled(cron = "0 * * * * *")
-    public synchronized void scheduledUpdate() {
+    public void crawlAndSave(Integer page, Major major) {
 
-        // 알람 테스트 코드 - 시작
-        notificationService.sendNotification(
-                NotificationDto.builder()
-                        .title("임시 알람 제목")
-                        .link("https://ncms.ulsan.ac.kr/cicweb/1024")
-                        .build());
-        // 알람 테스트 코드 - 끝
+        // major 별 처리
+        Set<Long> recentIds = grantRecentIds(major);
 
-        List<Notice> notices = webCrawling(1);
+        List<Notice> notices = webCrawling(1, major);
         Set<Long> crawlIds = notices.stream().map(Notice::getId).collect(Collectors.toSet());
 
-        Set<Long> willSaveIds = diffWithSaved(crawlIds, recentIds);
+
+
+        Set<Long> willSaveIds = diffWithSaved(crawlIds, recentIds, major);
         List<Notice> noticesToSave = new ArrayList<>();
 
         log.info("will save Ids : {}", willSaveIds.toString());
@@ -191,10 +202,9 @@ public class NoticeServiceImpl implements NoticeService {
                             NotificationDto.builder()
                                     .title(notice.getTitle())
                                     .link(notice.getLink())
+                                    .major(major.toString())
                                     .build());
                 }
-            } else {
-                NOTIFICATION = true;
             }
 
             log.info(recentIds.toString());
@@ -207,23 +217,23 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public void refresh(Integer page) {
-        List<Notice> notices = webCrawling(page);
+        
+        List<Notice> notices = new ArrayList<>();
+        
+        notices.addAll(webCrawling(page, Major.IT융합전공));
+        notices.addAll(webCrawling(page, Major.AI융합전공));
+        notices.addAll(webCrawling(page, Major.ICT융합학부));
 
         noticeRepository.deleteAll();
         noticeRepository.saveAll(notices);
     }
 
-    // 매달 DB 초기화
-    @Override
-    @Scheduled(cron = "0 0 0 1 * *")
-    public synchronized void scheduledRefresh() {
-        refresh(lastPage);
-    }
-
     // id 의 차이를 구함
-    public Set<Long> diffWithSaved(Set<Long> crawlIds, Set<Long> presentIds) {
+    public Set<Long> diffWithSaved(Set<Long> crawlIds, Set<Long> presentIds, Major major) {
 
         Set<Long> wouldSaveIds = new HashSet<>();
+
+        Set<Long> recentIds = grantRecentIds(major);
 
         // id를 가지고 있지 않다면, id 를 wouldSaveIds 에 추가
         for (Long id : crawlIds) {
@@ -242,24 +252,38 @@ public class NoticeServiceImpl implements NoticeService {
         return wouldSaveIds;
     }
 
+    public Set<Long> grantRecentIds(Major major) {
+
+        Set<Long> recentIds;
+
+        switch (major) {
+            case IT융합전공 -> recentIds = recentITIds;
+            case AI융합전공 -> recentIds = recentAIIds;
+            case ICT융합학부 -> recentIds = recentICTIds;
+            default -> throw new IllegalStateException("Unexpected value: " + major);
+        }
+
+        return recentIds;
+    }
+
     // 공지 조회
     @Override
     public Page<Notice> getNoticeList(Integer categoryInt, Integer page) {
 
-        Category category;
+        Type type;
         PageRequest pageRequest = PageRequest.of(page, 10,
                 Sort.by(Sort.Order.asc("category"), Sort.Order.desc("id"))
         );
 
         if (categoryInt == 0) {
-            category = Category.NOTICE;
+            type = Type.NOTICE;
         } else if (categoryInt == 1) {
-            category = Category.COMMON;
+            type = Type.COMMON;
         } else {
             return noticeRepository.findAll(pageRequest);
         }
 
-        return noticeRepository.findAllByCategory(category, pageRequest);
+        return noticeRepository.findAllByType(type, pageRequest);
     }
 
     // 검색 기능
