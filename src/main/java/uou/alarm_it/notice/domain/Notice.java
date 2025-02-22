@@ -4,7 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.*;
-import uou.alarm_it.notice.domain.Enum.Category;
+import uou.alarm_it.notice.domain.Enum.Major;
+import uou.alarm_it.notice.domain.Enum.Type;
 
 import java.time.LocalDate;
 
@@ -29,5 +30,8 @@ public class Notice {
     private String link;
 
     @Column
-    private Category category;
+    private Type type;
+
+    @Column
+    private Major major;
 }

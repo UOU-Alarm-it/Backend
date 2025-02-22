@@ -3,11 +3,13 @@ package uou.alarm_it.notice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import uou.alarm_it.apiPayload.ApiResponse;
 import uou.alarm_it.apiPayload.code.status.SuccessStatus;
+import uou.alarm_it.notice.domain.Enum.Major;
 import uou.alarm_it.notice.domain.Notice;
 import uou.alarm_it.notice.service.NoticeService;
 
@@ -28,9 +30,10 @@ public class NoticeController {
      */
     @GetMapping("/crawling")
     public ApiResponse<List<Notice>> webCrawling(
-            @RequestParam(name = "maxPage", defaultValue = "1") Integer maxPage
-    ) {
-        return ApiResponse.onSuccess(noticeService.webCrawling(maxPage));
+            @RequestParam(name = "maxPage", defaultValue = "1") Integer maxPage,
+            @RequestParam(name = "major", defaultValue = "IT융합전공") String major
+            ) {
+        return ApiResponse.onSuccess(noticeService.webCrawling(maxPage, Major.valueOf(major)));
     }
 
     /**
