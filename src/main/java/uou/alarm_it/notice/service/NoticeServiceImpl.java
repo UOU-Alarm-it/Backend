@@ -45,7 +45,7 @@ public class NoticeServiceImpl implements NoticeService {
     private static final Set<Long> recentAIIds = new HashSet<>();
     private static final Set<Long> recentICTIds = new HashSet<>();
 
-    private static final boolean USE_LOCAL_HTML = true; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
+    private static final boolean USE_LOCAL_HTML = false; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
     public static boolean NOTIFICATION = false;
 
 
@@ -217,9 +217,9 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public void refresh(Integer page) {
-        
+
         List<Notice> notices = new ArrayList<>();
-        
+
         notices.addAll(webCrawling(page, Major.IT융합전공));
         notices.addAll(webCrawling(page, Major.AI융합전공));
         notices.addAll(webCrawling(page, Major.ICT융합학부));
