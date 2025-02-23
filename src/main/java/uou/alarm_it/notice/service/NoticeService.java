@@ -15,7 +15,7 @@ public interface NoticeService {
 
     void refresh(Integer page);
 
-    Page<Notice> getNoticeList(Integer categoryInt, Integer page);
+    Page<Notice> getNoticeList(String typeStr, String majorStr, Integer page);
 
-    Page<Notice> getNoticeByKeyWord(String keyWord, Integer page);
+    Page<Notice> getNoticeByKeyWord(String keyWord, String majorStr, Integer page);
 }

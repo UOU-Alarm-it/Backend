@@ -18,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
-    // Major별 클라이언트 등록
+    // Major 별 클라이언트 등록
     private final Map<Major, List<SseEmitter>> emittersByMajor = new ConcurrentHashMap<>();
 
     // SSE 연결을 생성하고 클라이언트 등록 (알림)
@@ -35,9 +35,9 @@ public class NotificationServiceImpl implements NotificationService {
         return emitter;
     }
 
-    // 특정 Major에게 알림 전송
+    // 특정 Major 에게 알림 전송
     @Override
-    public void sendNotification(NotificationDto notificationDto) {
+    public NotificationDto sendNotification(NotificationDto notificationDto) {
 
         Major major;
 
@@ -65,9 +65,10 @@ public class NotificationServiceImpl implements NotificationService {
         // 연결이 끊긴 클라이언트 제거
         emitters.removeAll(deadEmitters);
         log.info("알람을 받은 {} 클라이언트(이용자) 수 : {}", major, emitters.size());
+        return notificationDto;
     }
 
-    // 특정 Major에서 Emitter 제거
+    // 특정 Major 에서 Emitter 제거
     private void removeEmitter(Major major, SseEmitter emitter) {
         emittersByMajor.getOrDefault(major, Collections.emptyList()).remove(emitter);
     }

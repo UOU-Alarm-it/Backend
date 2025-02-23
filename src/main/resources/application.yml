@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:53306/alarm_it
+    url: jdbc:mysql://localhost:3306/alarm_it
     username: ryuoo0
     password: rlgus!
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,3 +17,10 @@ spring:
         hbm2ddl:
           auto: update
         default_batch_fetch_size: 1000
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      base-path: /
