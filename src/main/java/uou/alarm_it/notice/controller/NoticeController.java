@@ -1,7 +1,9 @@
 package uou.alarm_it.notice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,28 +28,17 @@ public class NoticeController {
     /**
      * 25.01.18
      * 작성자 : 류기현
-     * webCrawling Test Api
-     */
-    @GetMapping("/crawling")
-    public ApiResponse<List<Notice>> webCrawling(
-            @RequestParam(name = "maxPage", defaultValue = "1") Integer maxPage,
-            @RequestParam(name = "major", defaultValue = "IT융합전공") String major
-            ) {
-        return ApiResponse.onSuccess(noticeService.webCrawling(maxPage, Major.valueOf(major)));
-    }
-
-    /**
-     * 25.01.18
-     * 작성자 : 류기현
      * 카테고리별 공지 조회
      */
     @GetMapping("/notice")
+    @Validated
     public ApiResponse<Page<Notice>> getNoticesByCategory(
-            @RequestParam(name = "category", defaultValue = "2") Integer category,
+            @RequestParam(name = "type", defaultValue = "전체") String type,
+            @RequestParam(name = "major", defaultValue = "ICT융합학부") String major,
             @RequestParam(name = "page", defaultValue = "0") Integer page
-    ) {
-        return ApiResponse.onSuccess(noticeService.getNoticeList(category, page));
 
+    ) {
+        return ApiResponse.onSuccess(noticeService.getNoticeList(type, major, page));
     }
 
     /**
@@ -71,9 +62,11 @@ public class NoticeController {
     @GetMapping("/search")
     public ApiResponse<Page<Notice>> search(
             @RequestParam(name = "keyWord", defaultValue = "") String keyWord,
+            @RequestParam(name = "major", defaultValue = "ICT융합학부") String major,
             @RequestParam(name = "page", defaultValue = "0") Integer page
+
     ) {
 
-        return ApiResponse.onSuccess(noticeService.getNoticeByKeyWord(keyWord, page));
+        return ApiResponse.onSuccess(noticeService.getNoticeByKeyWord(keyWord, major, page));
     }
 }

@@ -8,5 +8,5 @@ public interface NotificationService {
 
     SseEmitter subscribe(Major major);
 
-    void sendNotification(NotificationDto notificationDto);
+    NotificationDto sendNotification(NotificationDto notificationDto);
 }

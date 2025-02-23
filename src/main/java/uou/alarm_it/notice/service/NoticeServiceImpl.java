@@ -45,8 +45,8 @@ public class NoticeServiceImpl implements NoticeService {
     private static final Set<Long> recentAIIds = new HashSet<>();
     private static final Set<Long> recentICTIds = new HashSet<>();
 
-    private static final boolean USE_LOCAL_HTML = false; // true: 로컬 HTML 테스트 모드, false: 웹 크롤링 모드
     public static boolean NOTIFICATION = false;
+    public static final int PAGE = 10; // 한 페이지에 들어가는 내용 수
 
 
     // 웹 크롤링
@@ -72,28 +72,10 @@ public class NoticeServiceImpl implements NoticeService {
 
             Elements contents;
 
-            if (USE_LOCAL_HTML) {
-                // 로컬 HTML 파일을 이용한 테스트 모드
-                log.info("로컬 html 파일 test 모드");
-                ClassPathResource resource = new ClassPathResource("html/test" + j + ".html");
-                j++;
-
-                if (!resource.exists()) {
-                    throw new RuntimeException("HTML 파일을 찾을 수 없습니다.");
-                }
-
-                try {
-                    Document doc = Jsoup.parse(resource.getFile(), StandardCharsets.UTF_8.name());
-                    contents = doc.select("table.a_brdList tbody");
-                } catch (IOException e) {
-                    throw new RuntimeException("HTML 파일을 파싱하는 중 오류 발생: " + e.getMessage(), e);
-                }
-            } else {
-                try {
-                    contents = Jsoup.connect(IT_URL).get().select("table.a_brdList tbody");
-                } catch (IOException e) {
-                    throw new RuntimeException("페이지 로드 실패: " + IT_URL, e);
-                }
+            try {
+                contents = Jsoup.connect(IT_URL).get().select("table.a_brdList tbody");
+            } catch (IOException e) {
+                throw new RuntimeException("페이지 로드 실패: " + IT_URL, e);
             }
 
             for (Element content : contents.select("tr")) {
@@ -109,11 +91,12 @@ public class NoticeServiceImpl implements NoticeService {
                 Type type;
                 String idString;
 
-                // 공지인 경우, 아닌경우 title, id, category 추출
+                // 공지인 경우, 아닌경우 title, id, type 추출
                 if (content.hasClass("noti")) {
                     title = content.select("tr td.bdlTitle b a").text();                                // title
                     idString = content.select("tr td.bdlTitle b a").attr("href");        // id
-                    type = Type.NOTICE;                                                                  // category
+                    type = Type.NOTICE;                                                                  // type
+
                 } else {
                     title = content.select("td.bdlTitle a").text();
                     idString = content.select("tr td.bdlTitle a").attr("href");
@@ -152,8 +135,6 @@ public class NoticeServiceImpl implements NoticeService {
                     System.err.println("링크 추출 중 오류 발생: " + e.getMessage());
                 }
 
-
-
                 Notice notice = Notice.builder()
                         .id(id)
                         .title(title)
@@ -183,7 +164,7 @@ public class NoticeServiceImpl implements NoticeService {
         Set<Long> willSaveIds = diffWithSaved(crawlIds, recentIds, major);
         List<Notice> noticesToSave = new ArrayList<>();
 
-        log.info("will save Ids : {}", willSaveIds.toString());
+        log.info("will save {} Ids : {}", major, willSaveIds.toString());
 
         for (Long id : willSaveIds) {
             notices.stream()
@@ -268,32 +249,35 @@ public class NoticeServiceImpl implements NoticeService {
 
     // 공지 조회
     @Override
-    public Page<Notice> getNoticeList(Integer categoryInt, Integer page) {
+    public Page<Notice> getNoticeList(String typeStr, String majorStr, Integer page) {
 
-        Type type;
-        PageRequest pageRequest = PageRequest.of(page, 10,
-                Sort.by(Sort.Order.asc("category"), Sort.Order.desc("id"))
+        PageRequest pageRequest = PageRequest.of(page, PAGE,
+                Sort.by(Sort.Order.asc("type"), Sort.Order.desc("id"))
         );
 
-        if (categoryInt == 0) {
-            type = Type.NOTICE;
-        } else if (categoryInt == 1) {
-            type = Type.COMMON;
-        } else {
-            return noticeRepository.findAll(pageRequest);
-        }
+        // 전공 구분
+        Major major = Major.valueOf(majorStr);
 
-        return noticeRepository.findAllByType(type, pageRequest);
+        // 공지 구분
+        Type type;
+        if (typeStr.equals("중요 공지")) {
+            type = Type.NOTICE;
+            return noticeRepository.findAllByTypeAndMajor(type, major, pageRequest);
+        } else {
+            return noticeRepository.findAllByMajor(major, pageRequest);
+        }
     }
 
     // 검색 기능
     @Override
-    public Page<Notice> getNoticeByKeyWord(String keyWord, Integer page) {
+    public Page<Notice> getNoticeByKeyWord(String keyWord, String majorStr, Integer page) {
 
-        PageRequest pageRequest = PageRequest.of(page, 10,
-                Sort.by(Sort.Order.asc("category"), Sort.Order.desc("id"))
+        Major major = Major.valueOf(majorStr);
+
+        PageRequest pageRequest = PageRequest.of(page, PAGE,
+                Sort.by(Sort.Order.asc("type"), Sort.Order.desc("id"))
         );
 
-        return noticeRepository.findNoticeByTitleContainingIgnoreCase(keyWord, pageRequest);
+        return noticeRepository.findNoticeByTitleContainingIgnoreCaseAndMajor(keyWord, major, pageRequest);
     }
 }
