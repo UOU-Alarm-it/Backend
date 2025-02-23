@@ -64,4 +64,4 @@ COPY --from=build /app/build/libs/*.jar /app/app.jar
 EXPOSE 58080
 
 # MySQL, Spring Boot 및 Nginx 실행
-CMD ["sh", "-c", "service mysql start && sleep 5 && java -Dfile.encoding=UTF-8 -jar /app/app.jar --server.port=58080 & service nginx start && wait"]
+CMD ["sh", "-c", "service mysql start & sleep 5 && apt update && apt install nginx -y && service nginx start & sleep 5 && java -Dfile.encoding=UTF-8 -jar /app/app.jar --server.port=8080"]
