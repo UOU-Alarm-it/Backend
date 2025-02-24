@@ -17,6 +17,7 @@ import uou.alarm_it.apiPayload.ApiResponse;
 import uou.alarm_it.apiPayload.code.ErrorReasonDTO;
 import uou.alarm_it.apiPayload.code.status.ErrorStatus;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -117,4 +118,15 @@ public class ExceptionAdvice extends ResponseEntityExceptionHandler {
                 request
         );
     }
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<String> handleIOException(IOException e) {
+        if (e.getMessage().contains("Broken pipe")) {
+            // Broken pipe 로그 생략 (필요하면 최소한의 로그만 남기기)
+            log.warn("🔌 클라이언트 연결이 끊어졌습니다. (Broken pipe)");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("I/O 오류 발생");
+    }
+
 }
