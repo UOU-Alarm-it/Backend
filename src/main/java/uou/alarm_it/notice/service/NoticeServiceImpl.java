@@ -20,7 +20,6 @@ import uou.alarm_it.notification.dto.NotificationDto;
 import uou.alarm_it.notification.service.NotificationService;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -56,8 +55,8 @@ public class NoticeServiceImpl implements NoticeService {
         String baseURL;
 
         switch (major) {
-            case AI융합전공 -> baseURL = "https://ncms.ulsan.ac.kr/cicweb/1024";
-            case IT융합전공 -> baseURL = "https://ai.ulsan.ac.kr/ai/1105";
+            case AI융합전공 -> baseURL = "https://ai.ulsan.ac.kr/ai/1105";
+            case IT융합전공 -> baseURL = "https://ncms.ulsan.ac.kr/cicweb/1024";
             case ICT융합학부 -> baseURL = "https://ict.ulsan.ac.kr/ict/5786";
             default -> throw new IllegalStateException("Unexpected value: " + major);
         }
