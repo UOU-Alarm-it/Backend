@@ -38,35 +38,46 @@ public class NotificationServiceImpl implements NotificationService {
     // 특정 Major 에게 알림 전송
     @Override
     public NotificationDto sendNotification(NotificationDto notificationDto) {
-
         Major major;
 
         try {
             major = Major.valueOf(notificationDto.getMajor());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid major");
+            throw new IllegalArgumentException("Invalid major: " + notificationDto.getMajor());
         } catch (NullPointerException e) {
-            throw new IllegalArgumentException("Null major");
+            throw new IllegalArgumentException("Major cannot be null");
         }
 
         List<SseEmitter> emitters = emittersByMajor.getOrDefault(major, Collections.emptyList());
         List<SseEmitter> deadEmitters = new ArrayList<>();
 
-        emitters.forEach(emitter -> {
+        for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event()
-                        .name("notification")   // 이벤트 이름
-                        .data(notificationDto)); // 전송할 데이터
+                        .name("notification")
+                        .data(notificationDto));
             } catch (IOException e) {
+                if (e.getMessage().contains("Broken pipe")) {
+                    // Broken pipe 오류는 Stack Trace 없이 조용히 처리
+                    log.warn("🔔 SSE 연결이 끊어졌습니다. Major: {}", major);
+                } else {
+                    log.warn("🔔 SSE 전송 중 오류 발생: {}", e.getMessage(), e);
+                }
                 deadEmitters.add(emitter);
             }
-        });
+        }
 
-        // 연결이 끊긴 클라이언트 제거
-        emitters.removeAll(deadEmitters);
-        log.info("알람을 받은 {} 클라이언트(이용자) 수 : {}", major, emitters.size());
+
+        // 연결이 끊긴 클라이언트 제거 (ConcurrentModificationException 방지)
+        if (!deadEmitters.isEmpty()) {
+            emitters.removeAll(deadEmitters);
+        }
+
+        log.info("✅ 알람을 받은 클라이언트 수: {} (Major: {})", emitters.size(), major);
         return notificationDto;
     }
+
+
 
     // 특정 Major 에서 Emitter 제거
     private void removeEmitter(Major major, SseEmitter emitter) {
