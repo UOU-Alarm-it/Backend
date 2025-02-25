@@ -34,7 +34,7 @@ public class NoticeController {
     @Validated
     public ApiResponse<Page<Notice>> getNoticesByCategory(
             @RequestParam(name = "type", defaultValue = "전체") String type,
-            @RequestParam(name = "major", defaultValue = "ICT융합학부") String major,
+            @RequestParam(name = "major", defaultValue = "IT융합전공") String major,
             @RequestParam(name = "page", defaultValue = "0") Integer page
 
     ) {
@@ -62,7 +62,7 @@ public class NoticeController {
     @GetMapping("/search")
     public ApiResponse<Page<Notice>> search(
             @RequestParam(name = "keyWord", defaultValue = "") String keyWord,
-            @RequestParam(name = "major", defaultValue = "ICT융합학부") String major,
+            @RequestParam(name = "major", defaultValue = "IT융합전공") String major,
             @RequestParam(name = "page", defaultValue = "0") Integer page
 
     ) {
